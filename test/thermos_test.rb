@@ -223,6 +223,28 @@ class ThermosTest < ActiveSupport::TestCase
     assert_raises(MockExpectationError) { mock.verify }
   end
 
+  test "re-builds the cache on has_many record destroy" do
+    mock = Minitest::Mock.new
+    category = categories(:baseball)
+    category_item = category_items(:baseball_glove)
+
+    Thermos.fill(key: "key", model: Category, deps: [:category_items]) do |id|
+      mock.call(id)
+    end
+
+    mock.expect(:call, 1, [category.id])
+    assert_equal 1, Thermos.drink(key: "key", id: category.id)
+    mock.verify
+
+    mock.expect(:call, 2, [category.id])
+    category_item.destroy!
+    mock.verify
+
+    mock.expect(:call, 3, [category.id])
+    assert_equal 2, Thermos.drink(key: "key", id: category.id)
+    assert_raises(MockExpectationError) { mock.verify }
+  end
+
 # belongs_to model changes
   test "rebuilds the cache on belongs_to model change" do
     mock = Minitest::Mock.new
@@ -345,6 +367,28 @@ class ThermosTest < ActiveSupport::TestCase
 
     mock.expect(:call, 2, [category.id])
     assert_equal 1, Thermos.drink(key: "key", id: category.id)
+    assert_raises(MockExpectationError) { mock.verify }
+  end
+
+  test "rebuilds the cache on has_many through model destroy" do
+    mock = Minitest::Mock.new
+    category = categories(:baseball)
+    product = products(:glove)
+
+    Thermos.fill(key: "key", model: Category, deps: [:products]) do |id|
+      mock.call(id)
+    end
+
+    mock.expect(:call, 1, [category.id])
+    assert_equal 1, Thermos.drink(key: "key", id: category.id)
+    mock.verify
+
+    mock.expect(:call, 2, [category.id])
+    product.destroy!
+    mock.verify
+
+    mock.expect(:call, 3, [category.id])
+    assert_equal 2, Thermos.drink(key: "key", id: category.id)
     assert_raises(MockExpectationError) { mock.verify }
   end
 

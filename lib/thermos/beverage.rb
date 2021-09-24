@@ -15,12 +15,12 @@ module Thermos
       set_observers
     end
 
-    def lookup_keys_for_dep_model(dep_model)
+    def lookup_keys_for_dep_model(dep_model_class, dep_model_id)
       @deps.select do |dep|
-        dep.klass == dep_model.class
+        dep.klass == dep_model_class
       end.flat_map do |dep|
         @model.joins(dep.path)
-              .where(dep.table => { id: dep_model.id })
+              .where(dep.table => { id: dep_model_id })
               .pluck(@lookup_key)
       end.uniq
     end
